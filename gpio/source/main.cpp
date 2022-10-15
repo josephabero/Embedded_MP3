@@ -1,6 +1,6 @@
 #include <FreeRTOS.h>
 
-#include "gpio/source/gpio.hpp"
+#include "source/gpio.hpp"
 
 #include "utility/log.hpp"
 #include "utility/rtos/freertos/rtos.hpp"
@@ -47,15 +47,15 @@ void button_press_task(void *task_parameter) {
   sjsu::LogInfo("Setting Button as Input...");
   button->set_as_input();
 
-  uint8_t previous_state = GpioLab::Gpio::Level::kHigh;
+  uint8_t previous_state = GpioLab::Gpio::State::kHigh;
   uint8_t current_state = button->get_state();
 
   while (true) {
     current_state = button->get_state();
 
     // Release Semaphore when Button is released
-    if (previous_state == GpioLab::Gpio::Level::kHigh &&
-        current_state == GpioLab::Gpio::Level::kLow) {
+    if (previous_state == GpioLab::Gpio::State::kHigh &&
+        current_state == GpioLab::Gpio::State::kLow) {
       xSemaphoreGive(button_press);
     }
     previous_state = current_state;
