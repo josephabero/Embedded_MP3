@@ -41,6 +41,9 @@ class Gpio {
     set_low();
   }
 
+  /// Sets direction of GPIO pin
+  ///
+  /// @param direction - direction to set GPIO pin to
   void set_direction(Direction direction) {
     switch (direction) {
       case Direction::kInput:
@@ -54,14 +57,9 @@ class Gpio {
     }
   }
 
-  void set_as_input() {
-    gpio_->DIR &= ~(1 << pin_);
-  }
-
-  void set_as_output() {
-    gpio_->DIR |= (1 << pin_);
-  }
-
+  /// Sets state of GPIO pin
+  ///
+  /// @param state - state to set GPIO to
   void set_state(State state) {
     switch (state) {
       case State::kLow:
@@ -75,14 +73,7 @@ class Gpio {
     }
   }
 
-  void set_high() {
-    gpio_->PIN |= (1 << pin_);
-  }
-
-  void set_low() {
-    gpio_->PIN &= ~(1 << pin_);
-  }
-
+  /// Toggles state of GPIO pin based on the pin's current state
   void toggle() {
     uint8_t state = get_state();
 
@@ -98,6 +89,9 @@ class Gpio {
     }
   }
 
+  /// Reads current state of GPIO pin
+  ///
+  /// @return - current state of GPIO pin
   State get_state() {
     if (gpio_->PIN & (1 << pin_)) {
       return State::kHigh;
@@ -105,11 +99,38 @@ class Gpio {
     return State::kLow;
   }
 
-  uint8_t get_pin() { return pin_; };
-
+  /// Gets defined port
+  ///
+  /// @return - Returns integer for defined port
   uint8_t get_port() { return port_; };
 
+  /// Gets defined pin
+  ///
+  /// @return - Returns integer for defined pin
+  uint8_t get_pin() { return pin_; };
+
  private:
+  /// Sets GPIO pin direction as input
+  void set_as_input() {
+    gpio_->DIR &= ~(1 << pin_);
+  }
+
+  /// Sets GPIO pin direction as output
+  void set_as_output() {
+    gpio_->DIR |= (1 << pin_);
+  }
+
+  /// Sets GPIO pin state as high
+  void set_high() {
+    gpio_->PIN |= (1 << pin_);
+  }
+
+  /// Sets GPIO pin state as low
+  void set_low() {
+    gpio_->PIN &= ~(1 << pin_);
+  }
+
+
   uint8_t pin_;
   uint8_t port_;
   sjsu::lpc40xx::LPC_GPIO_TypeDef* gpio_;

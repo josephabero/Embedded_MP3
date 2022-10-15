@@ -18,8 +18,8 @@ void toggle_led_task(void *task_parameter) {
   sjsu::LogInfo("Initialized LED %d_%d...", led->get_port(), led->get_pin());
 
   sjsu::LogInfo("Setting LED as Output...");
-  led->set_as_output();
-  led->set_high();  // Initialize LED to be Off
+  led->set_direction(GpioLab::Gpio::Direction::kOutput);
+  led->set_state(GpioLab::Gpio::State::kHigh);  // Initialize LED to be Off
 
   uint32_t timeout = 5000;
 
@@ -45,7 +45,7 @@ void button_press_task(void *task_parameter) {
                 button->get_pin());
 
   sjsu::LogInfo("Setting Button as Input...");
-  button->set_as_input();
+  button->set_direction(GpioLab::Gpio::Direction::kInput);
 
   uint8_t previous_state = GpioLab::Gpio::State::kHigh;
   uint8_t current_state = button->get_state();
