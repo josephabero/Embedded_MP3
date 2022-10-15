@@ -15,19 +15,21 @@ class Gpio {
     kOutput = 1
   };
 
-  enum Level : uint8_t {
+  enum State : uint8_t {
     kLow = 0,
     kHigh = 1
   };
 
   Gpio(uint8_t port, uint8_t pin){
     if (port > 5) {
-      sjsu::LogError("Failed to Initialize GPIO driver: Invalid GPIO Port %d", port);
+      sjsu::LogError("Failed to Initialize GPIO driver: "
+                     "Invalid GPIO Port %d", port);
       return;
     }
 
     if (pin > 32) {
-      sjsu::LogError("Failed to Initialize GPIO driver: Invalid GPIO Pin %d", port);
+      sjsu::LogError("Failed to Initialize GPIO driver: "
+                     "Invalid GPIO Pin %d", port);
       return;
     }
 
@@ -39,50 +41,73 @@ class Gpio {
     set_low();
   }
 
-  void set_as_input(){
+  void set_direction(Direction direction) {
+    switch (direction) {
+      case Direction::kInput:
+        set_as_input();
+        break;
+      case Direction::kOutput:
+        set_as_output();
+        break;
+      default:
+        sjsu::LogError("Invalid GPIO direction: %d", direction);
+    }
+  }
+
+  void set_as_input() {
     gpio_->DIR &= ~(1 << pin_);
   }
 
-  void set_as_output(){
+  void set_as_output() {
     gpio_->DIR |= (1 << pin_);
   }
 
-  void set_high(){
+  void set_state(State state) {
+    switch (state) {
+      case State::kLow:
+        set_low();
+        break;
+      case State::kHigh:
+        set_high();
+        break;
+      default:
+        sjsu::LogError("Invalid GPIO state: %d", state);
+    }
+  }
+
+  void set_high() {
     gpio_->PIN |= (1 << pin_);
   }
 
-  void set_low(){
+  void set_low() {
     gpio_->PIN &= ~(1 << pin_);
   }
 
-  void set(bool state){
-    if (state) {
-      set_high();
-    }
-    else {
-      set_low();
-    }
-  }
-
   void toggle() {
-    if (get_level() == kLow) {
-      set_high();
-    }
-    else {
-      set_low();
+    uint8_t state = get_state();
+
+    switch (state) {
+      case State::kLow:
+        set_high();
+        break;
+      case State::kHigh:
+        set_low();
+        break;
+      default:
+        sjsu::LogError("Invalid GPIO state: %d", state);
     }
   }
 
-  Level get_level(){
+  State get_state() {
     if (gpio_->PIN & (1 << pin_)) {
-      return kHigh;
+      return State::kHigh;
     }
-    return kLow;
+    return State::kLow;
   }
 
-  uint8_t get_pin(){ return pin_; };
-  
-  uint8_t get_port(){ return port_; };
+  uint8_t get_pin() { return pin_; };
+
+  uint8_t get_port() { return port_; };
 
  private:
   uint8_t pin_;
@@ -98,4 +123,4 @@ class Gpio {
     sjsu::lpc40xx::LPC_GPIO5
   };
 };
-}
+}  // namespace GpioLab

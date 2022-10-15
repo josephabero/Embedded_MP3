@@ -1,6 +1,6 @@
 #include <FreeRTOS.h>
 
-#include "gpio.hpp"
+#include "gpio/source/gpio.hpp"
 
 #include "utility/log.hpp"
 #include "utility/rtos/freertos/rtos.hpp"
@@ -16,12 +16,12 @@ void toggle_led_task(void *task_parameter) {
 
   GpioLab::Gpio* led = static_cast<Gpio*>(task_parameter);
   sjsu::LogInfo("Initialized LED %d_%d...", led->get_port(), led->get_pin());
-  
+
   sjsu::LogInfo("Setting LED as Output...");
   led->set_as_output();
   led->set_high();  // Initialize LED to be Off
 
-  uint32_t timeout= 5000;
+  uint32_t timeout = 5000;
 
   while (true) {
     if (xSemaphoreTake(button_press, timeout)) {
@@ -29,7 +29,8 @@ void toggle_led_task(void *task_parameter) {
       led->toggle();
     }
     else {
-      sjsu::LogInfo("LED task timed out after waiting %dms for button press...", timeout);
+      sjsu::LogInfo("LED task timed out after waiting %dms for button press...",
+                    timeout);
     }
     vTaskDelay(50);
   }
@@ -39,19 +40,21 @@ void button_press_task(void *task_parameter) {
   sjsu::LogInfo("Initializing Button Task...");
 
   GpioLab::Gpio* button = static_cast<Gpio*>(task_parameter);
-  sjsu::LogInfo("Initialized Button %d_%d...", button->get_port(), button->get_pin());
+  sjsu::LogInfo("Initialized Button %d_%d...",
+                button->get_port(),
+                button->get_pin());
 
   sjsu::LogInfo("Setting Button as Input...");
   button->set_as_input();
 
   uint8_t previous_state = GpioLab::Gpio::Level::kHigh;
-  uint8_t current_state = button->get_level();
+  uint8_t current_state = button->get_state();
 
   while (true) {
-    current_state = button->get_level();
+    current_state = button->get_state();
 
     // Release Semaphore when Button is released
-    if (previous_state == GpioLab::Gpio::Level::kHigh && 
+    if (previous_state == GpioLab::Gpio::Level::kHigh &&
         current_state == GpioLab::Gpio::Level::kLow) {
       xSemaphoreGive(button_press);
     }
@@ -59,7 +62,7 @@ void button_press_task(void *task_parameter) {
     vTaskDelay(50);
   }
 }
-}  // namespace
+}  // namespace GpioLab
 
 int main()
 {
@@ -70,7 +73,7 @@ int main()
 
   static GpioLab::Gpio led(1, 18);
   static GpioLab::Gpio button(0, 29);
-  
+
   xTaskCreate(GpioLab::toggle_led_task,
               "LED Task",
               sjsu::rtos::StackSize(1024),
