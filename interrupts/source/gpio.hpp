@@ -44,14 +44,29 @@ class Gpio {
   /// @param port - port number between 0 and 5
   /// @param pin - pin number between 0 and 32
   Gpio(uint8_t port, uint8_t pin){
-    constexpr uint8_t max_port_num = 5;
-    constexpr uint8_t max_pin_num = 32;
-
-    if(port > max_port_num) {
-      sjsu::LogError("Couldn't initialize GPIO %d.%d! Invalid port number '%d'.", port, pin, port);
-      return;
+    // Determine Pin and Port
+    switch(port){
+      case 0:
+        IOxIntEnR = &sjsu::lpc40xx::LPC_GPIOINT->IO0IntEnR;
+        IOxIntEnF = &sjsu::lpc40xx::LPC_GPIOINT->IO0IntEnF;
+        break;
+      case 1:
+            break;
+      case 2:
+        IOxIntEnR = &sjsu::lpc40xx::LPC_GPIOINT->IO2IntEnR;
+        IOxIntEnF = &sjsu::lpc40xx::LPC_GPIOINT->IO2IntEnF;
+        break;
+      case 3:
+      case 4:
+      case 5:
+          break;
+      default:
+        sjsu::LogError("Invalid GPIO port: %d", port);
+        exit(1);
+        break;
     }
 
+    constexpr uint8_t max_pin_num = 32;
     if(pin > max_pin_num) {
       sjsu::LogError("Couldn't initialize GPIO %d.%d! Invalid pin number '%d'.", port, pin, pin);
       return;
@@ -60,20 +75,6 @@ class Gpio {
     port_ = port;
     pin_ = pin;
     gpio_ = LPC_GPIO[port];
-
-    // Determine Interrupt Port
-    switch(port){
-      case 0:
-        IOxIntEnR = &sjsu::lpc40xx::LPC_GPIOINT->IO0IntEnR;
-        IOxIntEnF = &sjsu::lpc40xx::LPC_GPIOINT->IO0IntEnF;
-        break;
-      case 2:
-        IOxIntEnR = &sjsu::lpc40xx::LPC_GPIOINT->IO2IntEnR;
-        IOxIntEnF = &sjsu::lpc40xx::LPC_GPIOINT->IO2IntEnF;
-        break;
-      default:
-        sjsu::LogInfo("Port does not correspond to a port with interrupts: %d", port_);
-    }
 
     set_as_output();
     set_high();
