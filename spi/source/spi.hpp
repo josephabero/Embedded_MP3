@@ -41,22 +41,6 @@ class Spi {
 
     typedef union
     {
-      uint8_t byte;
-      struct
-      {
-        uint8_t data_ready: 1;
-        uint8_t fifo_ready: 1;
-        uint8_t fifo_warning: 1;
-        uint8_t fifo_overrun: 1;
-        uint8_t activity: 1;
-        uint8_t inactivity: 1;
-        uint8_t awake: 1;
-        uint8_t error: 1;
-      } __attribute__((packed));
-    } adlx_t;
-
-    typedef union
-    {
       uint32_t reg;
       struct
       {
@@ -139,34 +123,22 @@ class Spi {
           break;
       }
 
-      // // Set the SPI Clock Frequency
-      // LPC_SSPx->CPSR |= freq_divider;
+      // Set the SPI Clock Frequency
+      LPC_SSPx->CPSR |= freq_divider;
 
-      // // Setup Control Registers
-      // ControlRegister0 CR0;
-      // CR0.frame_format = static_cast<int>(frame_format);
-      // CR0.data_size = static_cast<int>(frame_data_size);
+      // Setup Control Registers
+      ControlRegister0 CR0;
+      CR0.frame_format = static_cast<uint8_t>(frame_format);
+      CR0.data_size = static_cast<uint8_t>(frame_data_size) - 1;
 
-      // ControlRegister1 CR1;
-      // CR1.loop_back_mode = static_cast<int>(LoopBackMode::kNormalOperation);
-      // CR1.mode = static_cast<char>(master_slave_mode);
+      ControlRegister1 CR1;
+      CR1.enable = 1; // Enable SSPx
+      CR1.loop_back_mode = static_cast<uint8_t>(LoopBackMode::kNormalOperation);
+      CR1.mode = static_cast<char>(master_slave_mode);
 
-      // // Set Control Registers
-      // LPC_SSPx->CR0 = CR0.reg;
-      // LPC_SSPx->CR1 = CR1.reg;
-      // Initially clear CR0
-      LPC_SSPx->CR0 = 0;
-      LPC_SSPx->CR0 |= (0b111);       // Set DSS to user defined bit mode
-      LPC_SSPx->CR0 |= 0;                         // Sets format based on user definition
-      LPC_SSPx->CR0 &= ~(1 << 6);                 // Clear CPOL, bus clock low between frames
-      LPC_SSPx->CR0 &= ~(1 << 7);                 // Clear CPHA, first transition
-      LPC_SSPx->CR0 &= ~(0xFFFF << 8);            // Clear SCR to 0
-      LPC_SSPx->CPSR |= freq_divider;             // Set CPSR to user divide, ONLY ALLOWS FOR EVEN NUMBERS TO DIVIDE
-
-      // Set CR1
-      LPC_SSPx->CR1 &= ~(1);           // Set to normal operation
-      LPC_SSPx->CR1 &= ~(1 << 2);      // Set SSP2 as Master
-      LPC_SSPx->CR1 |= (1 << 1);       // Enable SSP2
+      // Set Control Registers
+      LPC_SSPx->CR0 = CR0.reg;
+      LPC_SSPx->CR1 = CR1.reg;
     }
 
     uint32_t Transfer(uint32_t send)
