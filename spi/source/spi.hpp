@@ -143,19 +143,19 @@ class Spi {
 
     uint32_t Transfer(uint32_t send)
     {
-        uint32_t result_byte = 0;
+      uint32_t result_byte = 0;
 
-        // Set SSP2 Data Register to send value
-        LPC_SSPx->DR = send;
+      // Set SSP2 Data Register to send value
+      LPC_SSPx->DR = send;
 
-        while(LPC_SSPx->SR & (1 << 4))
-        {
-            continue;   // BSY is set, currently sending/receiving frame
-        }
+      while(LPC_SSPx->SR & (1 << 4))
+      {
+          continue;   // BSY is set, currently sending/receiving frame
+      }
 
-        // When BSY bit is set, SSP2 Data Register holds value read from d
-        result_byte = LPC_SSPx->DR;
-        return result_byte;
+      // When BSY bit is set, SSP2 Data Register holds value read from d
+      result_byte = LPC_SSPx->DR;
+      return result_byte;
     }
   private:
     sjsu::lpc40xx::LPC_SSP_TypeDef* LPC_SSPx;
