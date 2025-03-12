@@ -141,21 +141,32 @@ class Spi {
       LPC_SSPx->CR1 = CR1.reg;
     }
 
-    uint32_t Transfer(uint32_t send)
+    bool IsBusBusy(){
+      return LPC_SSPx->SR & (1 << 4);
+    }
+
+    uint32_t Transfer(uint32_t data)
     {
       uint32_t result_byte = 0;
 
-      // Set SSP2 Data Register to send value
-      LPC_SSPx->DR = send;
+      // Set SSPx Data Register to send value
+      LPC_SSPx->DR = data;
 
-      while(LPC_SSPx->SR & (1 << 4))
+      while(IsBusBusy())
       {
           continue;   // BSY is set, currently sending/receiving frame
       }
 
-      // When BSY bit is set, SSP2 Data Register holds value read from d
+      // When BSY bit is set, SSPx Data Register holds value read from data register
       result_byte = LPC_SSPx->DR;
       return result_byte;
+    }
+
+    void Transfer(std::span<uint32_t> buffer)
+    {
+      for(auto & data : buffer){
+        data = Transfer(data);
+      }
     }
   private:
     sjsu::lpc40xx::LPC_SSP_TypeDef* LPC_SSPx;

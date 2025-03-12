@@ -15,27 +15,20 @@ namespace SpiLab
 {
   void SpiTask(void *task_parameter) {
     sjsu::LogInfo("Initializing SPI Task...");
-    SpiLab::Gpio CS(1, 10);
 
-    sjsu::LogInfo("Initializing AT25SF041 Flash...");
+    sjsu::LogInfo(" Initializing AT25SF041 Flash...");
+    SpiLab::Gpio CS(1, 10);
     SpiLab::AT25SF041 flash_mem(&CS);
     flash_mem.Initialize();
 
-    std::vector<uint32_t> result;
-
     while(true) {
-      sjsu::LogInfo("Attempting to Transfer via SPI...");
-      result = flash_mem.SendCommand(SpiLab::AT25SF041::Commands::kManufacturerAndDeviceId);
-
-      // Parse Result
-      uint8_t device_id = result.back();
-      result.pop_back();
-      uint8_t manufacturer_id = result.back();
-      result.pop_back();
+      std::array<uint32_t, 3> result = {};
+      sjsu::LogInfo(" Attempting to Transfer via SPI...");
+      flash_mem.CommandGetManufacturerAndDeviceId(result);
 
       // Log Result
-      sjsu::LogInfo("Manufacturer ID: 0x%02x", manufacturer_id);
-      sjsu::LogInfo("      Device ID: 0x%02x", device_id);
+      sjsu::LogInfo(" Manufacturer ID: 0x%02x", result[1]);
+      sjsu::LogInfo("       Device ID: 0x%02x", result[2]);
 
       vTaskDelay(10000);
     }
