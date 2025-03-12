@@ -155,6 +155,24 @@ class Spi {
       LPC_SSPx->CR0 = CR0.reg;
       LPC_SSPx->CR1 = CR1.reg;
     }
+
+  uint8_t Transfer(uint8_t data) {
+    // Setup data to send
+    uint8_t result_byte = 0;
+
+    // Place data in Data Register to be sent
+    LPC_SSPx->DR = data;
+
+    // Wait for data to be transferred
+    while(LPC_SSPx->SR & (1 << 4)) // Poll BSY bit
+    {
+      continue;
+    }
+
+    // Read response from Data Register
+    result_byte = LPC_SSPx->DR;
+    return result_byte;
+  }
   private:
     sjsu::lpc40xx::LPC_SSP_TypeDef* LPC_SSPx;
 };
