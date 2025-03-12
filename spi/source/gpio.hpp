@@ -76,8 +76,8 @@ class Gpio {
     pin_ = pin;
     gpio_ = LPC_GPIO[port];
 
-    set_as_output();
-    set_high();
+    SetAsOutput();
+    SetHigh();
   }
 
   // @param isr  - function to run when the interrupt event occurs.
@@ -112,15 +112,69 @@ class Gpio {
     });
   }
 
+  /// Toggles level of the pin
+  void Toggle() {
+    if(ReadBool()) {
+      SetState(State::kLow);
+    }
+    else {
+      SetState(State::kHigh);
+    }
+  }
+
+  /// Should return the state of the pin (input or output, doesn't matter)
+  ///
+  /// @return level of pin high => true, low => false
+  State Read() {
+    if (gpio_->PIN & (1 << pin_)) {
+      return State::kHigh;
+    }
+    return State::kLow;
+  }
+
+  /// Should return the state of the pin (input or output, doesn't matter)
+  ///
+  /// @return level of pin high => true, low => false
+  bool ReadBool() {
+    if (gpio_->PIN & (1 << pin_)) {
+      return true;
+    }
+    return false;
+  }
+
+  /// Sets this GPIO as an input
+  void SetAsInput() {
+    SetDirection(Direction::kInput);
+  }
+
+  /// Sets this GPIO as an output
+  void SetAsOutput() {
+    SetDirection(Direction::kOutput);
+  }
+
+  /// Set voltage of pin to HIGH
+  void SetHigh() {
+    SetState(State::kHigh);
+  }
+
+  /// Set voltage of pin to LOW
+  void SetLow() {
+    SetState(State::kHigh);
+  }
+
+  uint8_t GetPort() { return port_; };
+  uint8_t GetPin() { return pin_; };
+
+ private:
   /// Sets this GPIO as an input
   /// @param output - true => output, false => set pin to input
-  void set_direction(Direction direction) {
+  void SetDirection(Direction direction) {
     switch(direction) {
       case Direction::kInput:
-        set_as_input();
+        gpio_->DIR &= ~(1 << pin_);;
         break;
       case Direction::kOutput:
-        set_as_output();
+        gpio_->DIR |= (1 << pin_);
         break;
       default:
         sjsu::LogError("Attempted to set invalid direction '%d' for GPIO P%d.%d.", direction, port_, pin_);
@@ -131,71 +185,17 @@ class Gpio {
   /// Has no effect if the pin is set as "input".
   ///
   /// @param state - State::kHigh => set pin high, State::kLow => set pin low
-  void set_state(State state) {
+  void SetState(State state) {
     switch(state) {
       case State::kLow:
-        set_low();
+        gpio_->PIN &= ~(1 << pin_);
         break;
       case State::kHigh:
-        set_high();
+        gpio_->PIN |= (1 << pin_);
         break;
       default:
         sjsu::LogError("Attempted to set invalid state '%d' for GPIO P%d.%d.", state, port_, pin_);
     }
-  }
-
-  /// Toggles level of the pin
-  void toggle() {
-    if(read_bool()) {
-      set_state(State::kLow);
-    }
-    else {
-      set_state(State::kHigh);
-    }
-  }
-
-  /// Should return the state of the pin (input or output, doesn't matter)
-  ///
-  /// @return level of pin high => true, low => false
-  State read() {
-    if (gpio_->PIN & (1 << pin_)) {
-      return State::kHigh;
-    }
-    return State::kLow;
-  }
-
-  /// Should return the state of the pin (input or output, doesn't matter)
-  ///
-  /// @return level of pin high => true, low => false
-  bool read_bool() {
-    if (gpio_->PIN & (1 << pin_)) {
-      return true;
-    }
-    return false;
-  }
-
-  uint8_t get_port() { return port_; };
-  uint8_t get_pin() { return pin_; };
-
- private:
-  /// Sets this GPIO as an input
-  void set_as_input() {
-    gpio_->DIR &= ~(1 << pin_);
-  }
-
-  /// Sets this GPIO as an output
-  void set_as_output() {
-    gpio_->DIR |= (1 << pin_);
-  }
-
-  /// Set voltage of pin to HIGH
-  void set_high() {
-    gpio_->PIN |= (1 << pin_);
-  }
-
-  /// Set voltage of pin to LOW
-  void set_low() {
-    gpio_->PIN &= ~(1 << pin_);
   }
 
   uint8_t port_;
