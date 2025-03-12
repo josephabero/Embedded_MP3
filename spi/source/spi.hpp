@@ -126,12 +126,12 @@ class Spi {
           sjsu::LogInfo("Initializing P1.1 as SSP2_MOSI");
           sjsu::LogInfo("Initializing P1.4 as SSP2_MISO");
 
-          LPC_SSPx = sjsu::lpc40xx::LPC_SSP2;
-
           sjsu::lpc40xx::LPC_SC->PCONP |= (1 << 20);                          // Power on SSP2 Interface
-          sjsu::lpc40xx::LPC_IOCON->P1_0 = (sjsu::lpc40xx::LPC_IOCON->P1_0 & ~(0b111)) | (0b010); // SCLK2
-          sjsu::lpc40xx::LPC_IOCON->P1_1 = (sjsu::lpc40xx::LPC_IOCON->P1_1 & ~(0b111)) | (0b010); // MOSI2
-          sjsu::lpc40xx::LPC_IOCON->P1_4 = (sjsu::lpc40xx::LPC_IOCON->P1_4 & ~(0b111)) | (0b010); // MISO2
+          sjsu::lpc40xx::LPC_IOCON->P1_0 = (sjsu::lpc40xx::LPC_IOCON->P1_0 & ~(0b111)) | 0b100; // SCLK2
+          sjsu::lpc40xx::LPC_IOCON->P1_1 = (sjsu::lpc40xx::LPC_IOCON->P1_1 & ~(0b111)) | 0b100; // MOSI2
+          sjsu::lpc40xx::LPC_IOCON->P1_4 = (sjsu::lpc40xx::LPC_IOCON->P1_4 & ~(0b111)) | 0b100; // MISO2
+
+          LPC_SSPx = sjsu::lpc40xx::LPC_SSP2;
           break;
         default:
           sjsu::LogError("Invalid SPI port: %d", port);
@@ -139,40 +139,52 @@ class Spi {
           break;
       }
 
-      // Set the SPI Clock Frequency
-      LPC_SSPx->CPSR |= freq_divider;
+      // // Set the SPI Clock Frequency
+      // LPC_SSPx->CPSR |= freq_divider;
 
-      // Setup Control Registers
-      ControlRegister0 CR0;
-      CR0.frame_format = static_cast<int>(frame_format);
-      CR0.data_size = static_cast<int>(frame_data_size);
+      // // Setup Control Registers
+      // ControlRegister0 CR0;
+      // CR0.frame_format = static_cast<int>(frame_format);
+      // CR0.data_size = static_cast<int>(frame_data_size);
 
-      ControlRegister1 CR1;
-      CR1.loop_back_mode = static_cast<int>(LoopBackMode::kNormalOperation);
-      CR1.mode = static_cast<char>(master_slave_mode);
+      // ControlRegister1 CR1;
+      // CR1.loop_back_mode = static_cast<int>(LoopBackMode::kNormalOperation);
+      // CR1.mode = static_cast<char>(master_slave_mode);
 
-      // Set Control Registers
-      LPC_SSPx->CR0 = CR0.reg;
-      LPC_SSPx->CR1 = CR1.reg;
+      // // Set Control Registers
+      // LPC_SSPx->CR0 = CR0.reg;
+      // LPC_SSPx->CR1 = CR1.reg;
+      // Initially clear CR0
+      LPC_SSPx->CR0 = 0;
+      LPC_SSPx->CR0 |= (0b111);       // Set DSS to user defined bit mode
+      LPC_SSPx->CR0 |= 0;                         // Sets format based on user definition
+      LPC_SSPx->CR0 &= ~(1 << 6);                 // Clear CPOL, bus clock low between frames
+      LPC_SSPx->CR0 &= ~(1 << 7);                 // Clear CPHA, first transition
+      LPC_SSPx->CR0 &= ~(0xFFFF << 8);            // Clear SCR to 0
+      LPC_SSPx->CPSR |= freq_divider;             // Set CPSR to user divide, ONLY ALLOWS FOR EVEN NUMBERS TO DIVIDE
+
+      // Set CR1
+      LPC_SSPx->CR1 &= ~(1);           // Set to normal operation
+      LPC_SSPx->CR1 &= ~(1 << 2);      // Set SSP2 as Master
+      LPC_SSPx->CR1 |= (1 << 1);       // Enable SSP2
     }
 
-  uint8_t Transfer(uint8_t data) {
-    // Setup data to send
-    uint8_t result_byte = 0;
-
-    // Place data in Data Register to be sent
-    LPC_SSPx->DR = data;
-
-    // Wait for data to be transferred
-    while(LPC_SSPx->SR & (1 << 4)) // Poll BSY bit
+    uint32_t Transfer(uint32_t send)
     {
-      continue;
-    }
+        uint32_t result_byte = 0;
 
-    // Read response from Data Register
-    result_byte = LPC_SSPx->DR;
-    return result_byte;
-  }
+        // Set SSP2 Data Register to send value
+        LPC_SSPx->DR = send;
+
+        while(LPC_SSPx->SR & (1 << 4))
+        {
+            continue;   // BSY is set, currently sending/receiving frame
+        }
+
+        // When BSY bit is set, SSP2 Data Register holds value read from d
+        result_byte = LPC_SSPx->DR;
+        return result_byte;
+    }
   private:
     sjsu::lpc40xx::LPC_SSP_TypeDef* LPC_SSPx;
 };

@@ -11,7 +11,7 @@
 
 typedef void (*IsrPointer)();
 
-namespace GpioLab
+namespace SpiLab
 {
 class Gpio {
  public:
@@ -159,7 +159,7 @@ class Gpio {
 
   /// Set voltage of pin to LOW
   void SetLow() {
-    SetState(State::kHigh);
+    SetState(State::kLow);
   }
 
   uint8_t GetPort() { return port_; };
@@ -261,5 +261,5 @@ class Gpio {
     }
   }
 };
-}  // namespace GpioLab
+}  // namespace SpiLab
 
